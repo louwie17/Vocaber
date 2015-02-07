@@ -3,12 +3,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.awt.Panel;
+import java.awt.GridLayout;
+import javax.swing.*;
 
 public class Vocaber
 {
     static List<Translation> words = new ArrayList<Translation>();
+    static int randomIndex = 0;
 
-    private static boolean load_words(String fileName)
+    public static Translation getWord(int index) {
+        return words.get(index);
+    }
+
+    public static void removeWord(int index) {
+        words.remove(index);
+    }
+
+    private static boolean loadWords(String fileName)
     {
         File inputFile = new File(fileName);
 
@@ -27,6 +39,34 @@ public class Vocaber
         return true;
     }
 
+    public static void main(String[] args) throws FileNotFoundException
+    {
+        for (String s: args)
+        {
+            if (s.length() > 0)
+            {
+                System.out.println("File name: "+s);
+                if (loadWords(s))
+                    System.out.println("Successfully loaded file");
+                else
+                    System.out.println("Failed loading file");
+            }
+        }
+
+        Translation word = getWord(1);
+        System.out.println(word.original + "  -  " + word.foreign);
+
+        // Start the application
+        JFrame.setDefaultLookAndFeelDecorated(true);
+
+        VocabGUI frame = new VocabGUI();
+        //frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+    // Inner classes
+
     private static class Translation
     {
         String original;
@@ -39,21 +79,27 @@ public class Vocaber
         }
     }
 
-    public static void main(String[] args) throws FileNotFoundException
+    public static class VocabGUI extends JFrame
     {
-        for (String s: args)
+        private static final int FRAME_WIDTH = 450;
+        private static final int FRAME_HEIGHT = 140;
+
+        public VocabGUI()
         {
-            if (s.length() > 0)
-            {
-                System.out.println("File name: "+s);
-                if (load_words(s))
-                    System.out.println("Successfully loaded file");
-                else
-                    System.out.println("Failed loading file");
-            }
+            createPanel();
+            setSize(FRAME_WIDTH, FRAME_HEIGHT);
+            setTitle("Vocaber");
         }
 
-        Translation word = words.get(1);
-        System.out.println(word.original + "  -  "+word.foreign);
+        private void createPanel()
+        {
+            Panel panel = new Panel();
+            panel.setLayout(new GridLayout(0,2));
+
+            JLabel welcomeLabel = new JLabel("Welcome");
+            panel.add(welcomeLabel);
+            add(panel);
+        }
     }
+
 }
