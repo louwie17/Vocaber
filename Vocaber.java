@@ -9,30 +9,52 @@ import java.awt.GridLayout;
 import java.awt.event.*;
 import javax.swing.*;
 
+/**
+ * @author      louwie17
+ * @since       2015-02-08
+ * @version     1.0
+ *
+ * Acts as Q cards and used to learn German vocabulary, the vocabulary text
+ * file should be formatted as follows:
+ *      original word | foreign word
+ */
+
 public class Vocaber
 {
-    static final boolean ENABLE_DEBUG = true;
+    private static final boolean ENABLE_DEBUG = false;
 
-    static List<Translation> words = new ArrayList<Translation>();
-    static int randomIndex = 0;
-    static VocabGUI gui;
+    private static List<Translation> words = new ArrayList<Translation>();
+    private static Random randomGen = new Random();
+    private static int randomIndex = 0;
+    private static boolean reverse = false;
+    private static VocabGUI gui;
 
-    public static void knowTranslation()
+    // ============  Gui logic functions
+
+    /**
+     * Deletes the known translation from the words array list
+     * if all words are removed it exits the program, otherwise a
+     * new word will show
+     */
+    private static void knowTranslation()
     {
         // Delete known word and show new one
         debug("Know Word");
         showTranslationAnswer();
-        removeWord(randomIndex);
+        words.remove(randomIndex);
         if (words.size() > 0) {
             showRandomTranslation();
         } else {
             JOptionPane.showMessageDialog(null, "Congrats\n"
-                    + "you know Everything.");
+                    + "you know everything.");
             System.exit(1);
         }
     }
 
-    public static void dontKnowTranslation()
+    /**
+     * Show answer of current translation and shows new translation
+     */
+    private static void dontKnowTranslation()
     {
         // Show new word
         debug("Don't Know Word");
@@ -40,73 +62,102 @@ public class Vocaber
         showRandomTranslation();
     }
 
-    public static void showTranslationAnswer()
+    /**
+     * Shows the translation answer in the GUI fields
+     */
+    private static void showTranslationAnswer()
     {
         Translation answer = getWord(randomIndex);
-        gui.lastTestedWordLabel.setText(answer.original);
-        gui.answerTestedWordLabel.setText(answer.foreign);
+        if (reverse) {
+            gui.lastTestedWordLabel.setText(answer.foreign);
+            gui.answerTestedWordLabel.setText(answer.original);
+        } else {
+            gui.lastTestedWordLabel.setText(answer.original);
+            gui.answerTestedWordLabel.setText(answer.foreign);
+        }
     }
 
-    public static void showRandomTranslation()
+    /**
+     * Generates random int and shows a random translation in the GUI
+     */
+    private static void showRandomTranslation()
     {
-        // Generate random int
-        Random gen = new Random();
-        randomIndex = gen.nextInt(words.size());
-        debug("Random Int: "+Integer.toString(randomIndex));
+        randomIndex = randomGen.nextInt(words.size());
+        debug("Random Int: " + Integer.toString(randomIndex));
+
         Translation newWord = getWord(randomIndex);
-        gui.testedWordLabel.setText(newWord.original);
+        if (reverse) {
+            gui.testedWordLabel.setText(newWord.foreign);
+        } else {
+            gui.testedWordLabel.setText(newWord.original);
+        }
     }
 
+    // ========== End gui logic
+
+    /**
+     * Gets the translation at the given index
+     * @param index The index of the word/translation
+     * @return the translation at the given index.
+     */
     public static Translation getWord(int index) {
         return words.get(index);
     }
 
-    public static void removeWord(int index) {
-        words.remove(index);
-    }
-
-    private static boolean loadWords(String fileName)
+    /**
+     * Loads the words into the array from the given file
+     * @param fileName the given file name
+     */
+    private static void loadWords(String fileName)
     {
-        File inputFile = new File(fileName);
-
         try {
-            Scanner in = new Scanner(inputFile);
+            Scanner in = new Scanner(new File(fileName));
             while (in.hasNextLine())
             {
-                // Split line by |
+                // Splits line by |
                 String trans[] = in.nextLine().split("\\|");;
                 words.add(new Translation(trans[0], trans[1]));
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
+            System.err.println("File Not Found: " + fileName);
+            System.exit(1);
         }
-        return true;
     }
 
-    // Debug method
+    /**
+     *  Debug method
+     *  @param statement the printed debug statement
+     */
     private static void debug(String statement)
     {
         if (ENABLE_DEBUG)
-            System.out.println(statement);
+            System.err.println(statement);
     }
 
-    public static void main(String[] args) throws FileNotFoundException
+    /**
+     * Prints out how to use Vocaber
+     */
+    private static void usage()
     {
+        System.err.println("Usage: java Vocaber <vocabulary input file> " +
+                "[-r | --reverse]");
+    }
+
+    public static void main(String[] args)
+    {
+        if (args.length == 0 || args.length > 2) {
+            usage();
+            System.exit(1);
+        }
         for (String s: args)
         {
-            if (s.length() > 0)
-            {
-                debug("File name: "+s);
-                if (loadWords(s))
-                    debug("Successfully loaded file");
-                else
-                    debug("Failed loading file");
+            if (s.equals("-r") || s.equals("--reverse")) {
+                reverse = true;
+            } else {
+                debug("File name: " + s);
+                loadWords(s);
             }
         }
-
-        Translation word = getWord(1);
-        debug(word.original + "  -  " + word.foreign);
 
         // Start the application
         JFrame.setDefaultLookAndFeelDecorated(true);
@@ -120,10 +171,13 @@ public class Vocaber
 
     // Inner classes
 
+    /**
+     * Class is used to store the vocabulary words
+     */
     private static class Translation
     {
-        String original;
-        String foreign;
+        private String original;
+        private String foreign;
 
         public Translation(String original, String foreign)
         {
@@ -132,18 +186,23 @@ public class Vocaber
         }
     }
 
+    /**
+     * Class is used to display a GUI
+     */
     public static class VocabGUI extends JFrame
     {
         private static final int FRAME_WIDTH = 450;
         private static final int FRAME_HEIGHT = 140;
 
-        JButton knowButton;
-        JButton dontKnowButton;
-        JLabel testedWordLabel;
-        JLabel lastTestedWordLabel;
-        JLabel answerTestedWordLabel;
+        private JButton knowButton;
+        private JButton dontKnowButton;
+        private JLabel testedWordLabel;
+        private JLabel lastTestedWordLabel;
+        private JLabel answerTestedWordLabel;
 
-
+        /**
+         * Initiates the GUI
+         */
         public VocabGUI()
         {
            testedWordLabel = new JLabel("");
@@ -151,18 +210,25 @@ public class Vocaber
            answerTestedWordLabel = new JLabel("");
 
            createButtons();
-            createPanel();
-            setSize(FRAME_WIDTH, FRAME_HEIGHT);
-            setTitle("Vocaber");
-            enableButtons();
+           createPanel();
+           setSize(FRAME_WIDTH, FRAME_HEIGHT);
+           setTitle("Vocaber");
+           enableButtons();
         }
 
+        /**
+         * Enables the buttons
+         */
         private void enableButtons()
         {
             knowButton.setEnabled(true);
             dontKnowButton.setEnabled(true);
         }
 
+        /**
+         * Creates the buttons and callbacks for the buttons, it also
+         * creates two keyboard listeners for the buttons
+         */
         private void createButtons()
         {
             Action knowListener = new AbstractAction() {
@@ -191,10 +257,13 @@ public class Vocaber
             dontKnowButton.addActionListener(dontKnowListener);
         }
 
+        /**
+         * Creates the panel
+         */
         private void createPanel()
         {
             Panel panel = new Panel();
-            panel.setLayout(new GridLayout(0,2));
+            panel.setLayout(new GridLayout(0, 2));
             panel.add(lastTestedWordLabel);
             panel.add(answerTestedWordLabel);
             panel.add(testedWordLabel);
@@ -206,5 +275,4 @@ public class Vocaber
             add(panel);
         }
     }
-
 }
